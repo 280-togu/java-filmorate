@@ -14,8 +14,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final static Logger log = LoggerFactory.getLogger(FilmController.class);
-    private final Map<Integer, Film> films =  new HashMap<>();
+    private static final Logger log = LoggerFactory.getLogger(FilmController.class);
+    private final Map<Integer, Film> films = new HashMap<>();
 
     @GetMapping
     public Collection<Film> getFilms() {
@@ -59,14 +59,14 @@ public class FilmController {
             log.warn("Не обновить фильм: фильм не найден.");
             throw new ValidationException("Фильм не найден");
         }
-        if (newFilm.getName() !=null) {
+        if (newFilm.getName() != null) {
             if (newFilm.getName().isBlank()) {
                 log.warn("Не удалось обновить фильм: название не может быть пустым.");
                 throw new ValidationException("Название не может быть пустым.");
             }
             oldFilm.setName(newFilm.getName());
         }
-        if (newFilm.getDescription() !=null) {
+        if (newFilm.getDescription() != null) {
             if (newFilm.getDescription().length() > 200) {
                 log.warn("Не удалось обновить фильм: максимальная длина описания - 200 символов.");
                 throw new ValidationException("Максимальная длина описания - 200 символов.");

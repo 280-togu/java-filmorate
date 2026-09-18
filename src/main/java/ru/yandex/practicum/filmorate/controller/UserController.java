@@ -14,7 +14,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final static Logger log = LoggerFactory.getLogger(UserController.class);
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final Map<Integer, User> users = new HashMap<>();
 
     @GetMapping
@@ -28,7 +28,7 @@ public class UserController {
             log.warn("Не удалось создать пользоваетеля: email строка пустая или содержит неверный формат.");
             throw new ValidationException("Email строка пустая или содержит неверный формат.");
         }
-        if (user.getLogin() == null ||user.getLogin().isBlank() || user.getLogin().contains(" ")) {
+        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
             log.warn("Не удалось создать пользоваетеля: логин пустой или содержит пробелы.");
             throw new ValidationException("Логин не может быть пустым или содержать пробелы.");
         }
@@ -87,7 +87,7 @@ public class UserController {
             oldUser.setBirthday(newUser.getBirthday());
         }
         log.info("Пользователь под ID {} - успешно обновлён", oldUser.getId());
-        return  oldUser;
+        return oldUser;
     }
 
     private int getNextId() {
