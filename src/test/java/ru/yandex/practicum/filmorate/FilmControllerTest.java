@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -186,13 +187,18 @@ class FilmControllerTest {
     }
 
     @Test
-    void updateFilm_nonExistingFilm_shouldThrowException() {
+    void updateFilm_nonExistingFilm_shouldThrowNotFoundException() {
         FilmController controller = new FilmController();
 
         Film film = new Film();
         film.setId(999);
 
-        assertThrows(ValidationException.class, () -> controller.updateFilm(film));
+        NotFoundException exception = assertThrows(
+                NotFoundException.class,
+                () -> controller.updateFilm(film)
+        );
+
+        assertEquals("Фильм не найден", exception.getMessage());
     }
 
     @Test
