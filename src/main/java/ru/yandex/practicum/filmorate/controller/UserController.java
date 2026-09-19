@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -35,9 +36,11 @@ public class UserController {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        if (user.getBirthday().isAfter(LocalDate.now())) {
-            log.warn("Не удалось создать пользоваетеля: некорректная дата рождения.");
-            throw new ValidationException("Выбрана некорректная дата рождения.");
+        if (user.getBirthday() != null) {
+            if (user.getBirthday().isAfter(LocalDate.now())) {
+                log.warn("Не удалось создать пользоваетеля: некорректная дата рождения.");
+                throw new ValidationException("Выбрана некорректная дата рождения.");
+            }
         }
         user.setId(getNextId());
         users.put(user.getId(), user);
@@ -55,7 +58,7 @@ public class UserController {
 
         if (oldUser == null) {
             log.warn("Не удалось обновить пользователя: пользователь не найден.");
-            throw new ValidationException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
         if (newUser.getEmail() != null) {
             if (newUser.getEmail().isBlank() || !newUser.getEmail().contains("@")) {
