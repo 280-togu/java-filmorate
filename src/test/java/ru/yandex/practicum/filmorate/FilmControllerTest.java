@@ -1,10 +1,14 @@
 package ru.yandex.practicum.filmorate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -13,10 +17,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FilmControllerTest {
 
+    private FilmController controller;
+
+    @BeforeEach
+    void setUp() {
+        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        FilmService filmService = new FilmService(filmStorage, userStorage);
+        controller = new FilmController(filmService);
+    }
+
     @Test
     void addFilm_validFilm_shouldCreateFilm() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Интерстеллар");
         film.setDescription("Фантастический фильм");
@@ -32,8 +44,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_nullName_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName(null);
         film.setDescription("Фильм");
@@ -45,8 +55,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_emptyName_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("");
         film.setDescription("Фильм");
@@ -58,8 +66,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_descriptionMoreThan200Characters_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("А".repeat(201));
@@ -71,8 +77,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_descriptionExactly200Characters_shouldCreateFilm() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("А".repeat(200));
@@ -87,8 +91,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_releaseDateBeforeMinimum_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Фильм");
@@ -100,8 +102,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_releaseDateExactlyMinimum_shouldCreateFilm() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Фильм");
@@ -116,8 +116,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_zeroDuration_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Фильм");
@@ -129,8 +127,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_negativeDuration_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Фильм");
@@ -142,8 +138,6 @@ class FilmControllerTest {
 
     @Test
     void addFilm_emptyFilm_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
 
         assertThrows(ValidationException.class, () -> controller.addFilm(film));
@@ -151,8 +145,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_existingFilm_shouldUpdateFilm() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Старое название");
         film.setDescription("Старое описание");
@@ -179,8 +171,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_zeroId_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
 
         assertThrows(ValidationException.class, () -> controller.updateFilm(film));
@@ -188,8 +178,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_nonExistingFilm_shouldThrowNotFoundException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setId(999);
 
@@ -203,8 +191,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_emptyName_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -222,8 +208,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_descriptionMoreThan200Characters_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -241,8 +225,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_releaseDateBeforeMinimum_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -260,8 +242,6 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_negativeDuration_shouldThrowException() {
-        FilmController controller = new FilmController();
-
         Film film = new Film();
         film.setName("Фильм");
         film.setDescription("Описание");
@@ -279,8 +259,6 @@ class FilmControllerTest {
 
     @Test
     void getFilms_shouldReturnAllFilms() {
-        FilmController controller = new FilmController();
-
         Film firstFilm = new Film();
         firstFilm.setName("Первый фильм");
         firstFilm.setDescription("Описание");
@@ -296,7 +274,7 @@ class FilmControllerTest {
         controller.addFilm(firstFilm);
         controller.addFilm(secondFilm);
 
-        Collection<Film> result = controller.getFilms();
+        Collection<Film> result = controller.findAll();
 
         assertEquals(2, result.size());
         assertTrue(result.contains(firstFilm));

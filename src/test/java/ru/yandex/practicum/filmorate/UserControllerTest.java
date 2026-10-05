@@ -1,9 +1,12 @@
 package ru.yandex.practicum.filmorate;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -11,10 +14,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UserControllerTest {
 
+    private UserController controller;
+
+    @BeforeEach
+    void setUp() {
+        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        controller = new UserController(userService);
+    }
+
     @Test
     void createUser_validUser_shouldCreateUser() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("test");
@@ -29,8 +39,6 @@ class UserControllerTest {
 
     @Test
     void createUser_nullEmail_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail(null);
         user.setLogin("test");
@@ -42,8 +50,6 @@ class UserControllerTest {
 
     @Test
     void createUser_emptyEmail_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("");
         user.setLogin("test");
@@ -55,8 +61,6 @@ class UserControllerTest {
 
     @Test
     void createUser_emailWithoutAt_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("testmail.ru");
         user.setLogin("test");
@@ -68,8 +72,6 @@ class UserControllerTest {
 
     @Test
     void createUser_nullLogin_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin(null);
@@ -81,8 +83,6 @@ class UserControllerTest {
 
     @Test
     void createUser_emptyLogin_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("");
@@ -94,8 +94,6 @@ class UserControllerTest {
 
     @Test
     void createUser_loginWithSpace_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("test user");
@@ -107,8 +105,6 @@ class UserControllerTest {
 
     @Test
     void createUser_futureBirthday_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("test");
@@ -120,8 +116,6 @@ class UserControllerTest {
 
     @Test
     void createUser_nullName_shouldUseLoginAsName() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("test");
@@ -135,8 +129,6 @@ class UserControllerTest {
 
     @Test
     void createUser_emptyName_shouldUseLoginAsName() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("test");
@@ -150,8 +142,6 @@ class UserControllerTest {
 
     @Test
     void createUser_emptyUser_shouldThrowException() {
-        UserController controller = new UserController();
-
         User user = new User();
 
         assertThrows(ValidationException.class, () -> controller.createUser(user));
@@ -159,8 +149,6 @@ class UserControllerTest {
 
     @Test
     void createUser_birthdayToday_shouldCreateUser() {
-        UserController controller = new UserController();
-
         User user = new User();
         user.setEmail("test@mail.ru");
         user.setLogin("test");
