@@ -13,5 +13,5 @@ public class Film {
     String description;
     LocalDate releaseDate;
     int duration;
-    Set<Integer> likes =  new HashSet<>();
+    Set<Integer> likes = new HashSet<>();
 }

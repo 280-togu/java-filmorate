@@ -160,7 +160,7 @@ public class UserService {
         return user;
     }
 
-    public Collection<User> friendsFriend(Integer userId){
+    public Collection<User> friendsFriend(Integer userId) {
         User user = userStorage.getUserById(userId);
         if (user == null) {
             throw new NotFoundException("Пользователь не найден.");
