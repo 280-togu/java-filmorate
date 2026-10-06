@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
@@ -18,11 +19,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class FilmControllerTest {
 
     private FilmController controller;
+    private InMemoryUserStorage userStorage;
 
     @BeforeEach
     void setUp() {
         InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
-        InMemoryUserStorage userStorage = new InMemoryUserStorage();
+        userStorage = new InMemoryUserStorage();
+
         FilmService filmService = new FilmService(filmStorage, userStorage);
         controller = new FilmController(filmService);
     }
@@ -279,5 +282,165 @@ class FilmControllerTest {
         assertEquals(2, result.size());
         assertTrue(result.contains(firstFilm));
         assertTrue(result.contains(secondFilm));
+    }
+
+    @Test
+    void findById_existingFilm_shouldReturnFilm() {
+        Film film = new Film();
+        film.setName("Фильм");
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(120);
+
+        Film createdFilm = controller.addFilm(film);
+
+        Film result = controller.findById(createdFilm.getId());
+
+        assertEquals(createdFilm.getId(), result.getId());
+        assertEquals("Фильм", result.getName());
+    }
+
+    @Test
+    void findById_nonExistingFilm_shouldThrowNotFoundException() {
+        NotFoundException exception = assertThrows(
+                NotFoundException.class,
+                () -> controller.findById(999)
+        );
+
+        assertEquals("Фильм не найден.", exception.getMessage());
+    }
+
+    @Test
+    void addLike_existingFilmAndUser_shouldAddLike() {
+        Film film = new Film();
+        film.setName("Фильм");
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(120);
+
+        Film createdFilm = controller.addFilm(film);
+
+        User user = new User();
+        user.setEmail("test@mail.ru");
+        user.setLogin("test");
+        user.setName("Test");
+        user.setBirthday(LocalDate.of(1995, 5, 10));
+        userStorage.addUser(user);
+
+        Film result = controller.addLike(createdFilm.getId(), user.getId());
+
+        assertTrue(result.getLikes().contains(user.getId()));
+    }
+
+    @Test
+    void addLike_nonExistingUser_shouldThrowNotFoundException() {
+        Film film = new Film();
+        film.setName("Фильм");
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(120);
+
+        Film createdFilm = controller.addFilm(film);
+
+        assertThrows(
+                NotFoundException.class,
+                () -> controller.addLike(createdFilm.getId(), 999)
+        );
+    }
+
+    @Test
+    void addLike_nonExistingFilm_shouldThrowNotFoundException() {
+        assertThrows(
+                NotFoundException.class,
+                () -> controller.addLike(999, 1)
+        );
+    }
+
+    @Test
+    void removeLike_existingFilmAndUser_shouldRemoveLike() {
+        Film film = new Film();
+        film.setName("Фильм");
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(120);
+
+        Film createdFilm = controller.addFilm(film);
+
+        User user = new User();
+        user.setEmail("test@mail.ru");
+        user.setLogin("test");
+        user.setName("Test");
+        user.setBirthday(LocalDate.of(1995, 5, 10));
+        userStorage.addUser(user);
+
+        controller.addLike(createdFilm.getId(), user.getId());
+
+        Film result = controller.deleteLike(createdFilm.getId(), user.getId());
+
+        assertFalse(result.getLikes().contains(user.getId()));
+    }
+
+    @Test
+    void getTopFilms_shouldReturnFilmsSortedByLikes() {
+        Film firstFilm = new Film();
+        firstFilm.setName("Первый");
+        firstFilm.setDescription("Описание");
+        firstFilm.setReleaseDate(LocalDate.of(2020, 1, 1));
+        firstFilm.setDuration(100);
+
+        Film secondFilm = new Film();
+        secondFilm.setName("Второй");
+        secondFilm.setDescription("Описание");
+        secondFilm.setReleaseDate(LocalDate.of(2020, 1, 1));
+        secondFilm.setDuration(100);
+
+        Film thirdFilm = new Film();
+        thirdFilm.setName("Третий");
+        thirdFilm.setDescription("Описание");
+        thirdFilm.setReleaseDate(LocalDate.of(2020, 1, 1));
+        thirdFilm.setDuration(100);
+
+        controller.addFilm(firstFilm);
+        controller.addFilm(secondFilm);
+        controller.addFilm(thirdFilm);
+
+        firstFilm.getLikes().add(1);
+        secondFilm.getLikes().add(1);
+        secondFilm.getLikes().add(2);
+        thirdFilm.getLikes().add(1);
+        thirdFilm.getLikes().add(2);
+        thirdFilm.getLikes().add(3);
+
+        Collection<Film> result = controller.findTop10(2);
+
+        assertEquals(2, result.size());
+
+        assertEquals("Третий", result.iterator().next().getName());
+    }
+
+    @Test
+    void updateFilm_invalidDescription_shouldNotChangeExistingFilm() {
+        Film film = new Film();
+        film.setName("Старое название");
+        film.setDescription("Старое описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(100);
+
+        Film createdFilm = controller.addFilm(film);
+
+        Film updatedFilm = new Film();
+        updatedFilm.setId(createdFilm.getId());
+        updatedFilm.setName("Новое название");
+        updatedFilm.setDescription("А".repeat(201));
+
+        assertThrows(
+                ValidationException.class,
+                () -> controller.updateFilm(updatedFilm)
+        );
+
+        Film result = controller.findById(createdFilm.getId());
+
+        assertEquals("Старое название", result.getName());
+        assertEquals("Старое описание", result.getDescription());
     }
 }

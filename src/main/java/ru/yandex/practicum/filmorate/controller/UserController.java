@@ -58,6 +58,6 @@ public class UserController {
 
     @GetMapping("/{id}/friends")
     public Collection<User> getFriends(@PathVariable("id") int id) {
-        return userService.friendsFriend(id);
+        return userService.getFriends(id);
     }
 }

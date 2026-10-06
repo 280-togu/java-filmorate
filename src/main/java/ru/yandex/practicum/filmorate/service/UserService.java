@@ -9,9 +9,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -45,7 +43,6 @@ public class UserService {
                 throw new ValidationException("Выбрана некорректная дата рождения.");
             }
         }
-        user.setId(getNextId());
         userStorage.addUser(user);
         log.info("Пользователь '{}' с именем '{}' добавлен, логин: {}", user.getId(), user.getName(), user.getLogin());
         return user;
@@ -56,26 +53,43 @@ public class UserService {
             log.warn("Не удалось обновить пользователя: Id должен быть указан.");
             throw new ValidationException("Id должен быть указан");
         }
+
         User oldUser = userStorage.getUserById(newUser.getId());
 
         if (oldUser == null) {
             log.warn("Не удалось обновить пользователя: пользователь не найден.");
             throw new NotFoundException("Пользователь не найден");
         }
+
         if (newUser.getEmail() != null) {
             if (newUser.getEmail().isBlank() || !newUser.getEmail().contains("@")) {
                 log.warn("Не удалось обновить пользователя: отсутствует email или содержит неверный формат.");
                 throw new ValidationException("Email строка пустая или содержит неверный формат.");
             }
-            oldUser.setEmail(newUser.getEmail());
         }
+
         if (newUser.getLogin() != null) {
             if (newUser.getLogin().isBlank() || newUser.getLogin().contains(" ")) {
                 log.warn("Не удалось обновить пользователя: пустой логин или содержит пробелы.");
                 throw new ValidationException("Логин не может быть пустым или содержать пробелы.");
             }
+        }
+
+        if (newUser.getBirthday() != null) {
+            if (newUser.getBirthday().isAfter(LocalDate.now())) {
+                log.warn("Не удалось обновить пользователя: некорректная дата рождения.");
+                throw new ValidationException("Выбрана некорректная дата рождения.");
+            }
+        }
+
+        if (newUser.getEmail() != null) {
+            oldUser.setEmail(newUser.getEmail());
+        }
+
+        if (newUser.getLogin() != null) {
             oldUser.setLogin(newUser.getLogin());
         }
+
         if (newUser.getName() != null) {
             if (newUser.getName().isBlank()) {
                 oldUser.setName(oldUser.getLogin());
@@ -85,12 +99,9 @@ public class UserService {
         }
 
         if (newUser.getBirthday() != null) {
-            if (newUser.getBirthday().isAfter(LocalDate.now())) {
-                log.warn("Не удалось обновить пользователя: некорректная дата рождения.");
-                throw new ValidationException("Выбрана некорректная дата рождения.");
-            }
             oldUser.setBirthday(newUser.getBirthday());
         }
+
         log.info("Пользователь под ID {} - успешно обновлён", oldUser.getId());
         userStorage.updateUser(oldUser);
         return oldUser;
@@ -101,15 +112,22 @@ public class UserService {
         User userFriend = userStorage.getUserById(friendId);
 
         if (user == null) {
+            log.warn("Не удалось добавить друга: пользователь с ID {} не найден.", userId);
             throw new NotFoundException("Данного пользователся не существует.");
         }
         if (userFriend == null) {
+            log.warn("Не удалось добавить друга: пользователь с ID {} не найден.", friendId);
             throw new NotFoundException("Пользователя с таким id не существует.");
+        }
+        if (userId.equals(friendId)) {
+            log.warn("Не удалось добавить друга: нельзя добавить самого себя в друзья.");
+            throw new ValidationException("Нельзя добавить самого себя в друзья.");
         }
         user.getFriends().add(friendId);
         userFriend.getFriends().add(userId);
         userStorage.updateUser(user);
         userStorage.updateUser(userFriend);
+        log.info("Пользователь с ID {} добавил в друзья пользователя с ID {}", userId, friendId);
         return user;
     }
 
@@ -118,65 +136,63 @@ public class UserService {
         User userFriend = userStorage.getUserById(friendId);
 
         if (user == null) {
+            log.warn("Не удалось удалить друга: пользователь с ID {} не найден.", userId);
             throw new NotFoundException("Данного пользователся не существует.");
         }
         if (userFriend == null) {
+            log.warn("Не удалось удалить друга: пользователь с ID {} не найден.", friendId);
             throw new NotFoundException("Пользователя с таким id не существует.");
         }
         user.getFriends().remove(friendId);
         userFriend.getFriends().remove(userId);
         userStorage.updateUser(user);
         userStorage.updateUser(userFriend);
+        log.info("Пользователь с ID {} удалил из друзей пользователя с ID {}", userId, friendId);
         return user;
     }
 
-    public Collection<User> mutualFriends(Integer userId, Integer friendId) {
+    public List<User> mutualFriends(Integer userId, Integer otherId) {
         User user = userStorage.getUserById(userId);
-        User userFriend = userStorage.getUserById(friendId);
+        User otherUser = userStorage.getUserById(otherId);
         if (user == null) {
+            log.warn("Не удалось получить общих друзей: пользователь с ID {} не найден.", userId);
             throw new NotFoundException("Данного пользователся не существует.");
         }
-        if (userFriend == null) {
+        if (otherUser == null) {
+            log.warn("Не удалось получить общих друзей: пользователь с ID {} не найден.", otherId);
             throw new NotFoundException("Пользователя с таким id не существует.");
         }
         Set<Integer> friends = new HashSet<>(user.getFriends());
 
-        friends.retainAll(userFriend.getFriends());
+        friends.retainAll(otherUser.getFriends());
 
-        Collection<User> mutualFriend = new HashSet<>();
+        List<User> mutualFriends = new ArrayList<>();
 
         for (Integer friend : friends) {
-            mutualFriend.add(userStorage.getUserById(friend));
+            mutualFriends.add(userStorage.getUserById(friend));
         }
-        return mutualFriend;
+        return mutualFriends;
     }
 
     public User getUserById(Integer userId) {
         User user = userStorage.getUserById(userId);
         if (user == null) {
+            log.warn("Не удалось получить пользователя: пользователь с ID {} не найден.", userId);
             throw new NotFoundException("Пользователь не найден.");
         }
         return user;
     }
 
-    public Collection<User> friendsFriend(Integer userId) {
+    public List<User> getFriends(Integer userId) {
         User user = userStorage.getUserById(userId);
         if (user == null) {
+            log.warn("Не удалось получить друзья пользователя: пользователь с ID {} не найден.", userId);
             throw new NotFoundException("Пользователь не найден.");
         }
-        Collection<User> friendsFriend = new HashSet<>();
+        List<User> friends = new ArrayList<>();
         for (Integer friendId : user.getFriends()) {
-            friendsFriend.add(userStorage.getUserById(friendId));
+            friends.add(userStorage.getUserById(friendId));
         }
-        return friendsFriend;
-    }
-
-    private int getNextId() {
-        int currentMaxId = userStorage.getAllUsers()
-                .stream()
-                .mapToInt(User::getId)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+        return friends;
     }
 }
