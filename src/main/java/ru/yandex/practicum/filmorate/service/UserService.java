@@ -107,73 +107,6 @@ public class UserService {
         return oldUser;
     }
 
-    public User addFriend(Integer userId, Integer friendId) {
-        User user = userStorage.getUserById(userId);
-        User userFriend = userStorage.getUserById(friendId);
-
-        if (user == null) {
-            log.warn("Не удалось добавить друга: пользователь с ID {} не найден.", userId);
-            throw new NotFoundException("Данного пользователся не существует.");
-        }
-        if (userFriend == null) {
-            log.warn("Не удалось добавить друга: пользователь с ID {} не найден.", friendId);
-            throw new NotFoundException("Пользователя с таким id не существует.");
-        }
-        if (userId.equals(friendId)) {
-            log.warn("Не удалось добавить друга: нельзя добавить самого себя в друзья.");
-            throw new ValidationException("Нельзя добавить самого себя в друзья.");
-        }
-        user.getFriends().add(friendId);
-        userFriend.getFriends().add(userId);
-        userStorage.updateUser(user);
-        userStorage.updateUser(userFriend);
-        log.info("Пользователь с ID {} добавил в друзья пользователя с ID {}", userId, friendId);
-        return user;
-    }
-
-    public User removeFriend(Integer userId, Integer friendId) {
-        User user = userStorage.getUserById(userId);
-        User userFriend = userStorage.getUserById(friendId);
-
-        if (user == null) {
-            log.warn("Не удалось удалить друга: пользователь с ID {} не найден.", userId);
-            throw new NotFoundException("Данного пользователся не существует.");
-        }
-        if (userFriend == null) {
-            log.warn("Не удалось удалить друга: пользователь с ID {} не найден.", friendId);
-            throw new NotFoundException("Пользователя с таким id не существует.");
-        }
-        user.getFriends().remove(friendId);
-        userFriend.getFriends().remove(userId);
-        userStorage.updateUser(user);
-        userStorage.updateUser(userFriend);
-        log.info("Пользователь с ID {} удалил из друзей пользователя с ID {}", userId, friendId);
-        return user;
-    }
-
-    public List<User> mutualFriends(Integer userId, Integer otherId) {
-        User user = userStorage.getUserById(userId);
-        User otherUser = userStorage.getUserById(otherId);
-        if (user == null) {
-            log.warn("Не удалось получить общих друзей: пользователь с ID {} не найден.", userId);
-            throw new NotFoundException("Данного пользователся не существует.");
-        }
-        if (otherUser == null) {
-            log.warn("Не удалось получить общих друзей: пользователь с ID {} не найден.", otherId);
-            throw new NotFoundException("Пользователя с таким id не существует.");
-        }
-        Set<Integer> friends = new HashSet<>(user.getFriends());
-
-        friends.retainAll(otherUser.getFriends());
-
-        List<User> mutualFriends = new ArrayList<>();
-
-        for (Integer friend : friends) {
-            mutualFriends.add(userStorage.getUserById(friend));
-        }
-        return mutualFriends;
-    }
-
     public User getUserById(Integer userId) {
         User user = userStorage.getUserById(userId);
         if (user == null) {
@@ -181,18 +114,5 @@ public class UserService {
             throw new NotFoundException("Пользователь не найден.");
         }
         return user;
-    }
-
-    public List<User> getFriends(Integer userId) {
-        User user = userStorage.getUserById(userId);
-        if (user == null) {
-            log.warn("Не удалось получить друзья пользователя: пользователь с ID {} не найден.", userId);
-            throw new NotFoundException("Пользователь не найден.");
-        }
-        List<User> friends = new ArrayList<>();
-        for (Integer friendId : user.getFriends()) {
-            friends.add(userStorage.getUserById(friendId));
-        }
-        return friends;
     }
 }
