@@ -23,7 +23,12 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(int id) {
-        String sql = "SELECT * FROM films WHERE id = ?";
+        String sql = """
+        SELECT f.*, m.name AS mpa_name
+        FROM films AS f
+        LEFT JOIN mpa_ratings AS m ON f.mpa_id = m.id
+        WHERE f.id = ?
+        """;
         try {
             return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
                 Film film = new Film();
@@ -35,7 +40,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.setDuration(rs.getInt("duration"));
                 int mpaId = rs.getInt("mpa_id");
                 if (!rs.wasNull()) {
-                    film.setMpaRating(MpaRating.fromId(mpaId));
+                    film.setMpaRating(new MpaRating(mpaId, rs.getString("mpa_name")));
                 }
                 film.setGenres(getGenresByFilmId(film.getId()));
                 film.setLikes(getLikesByFilmId(film.getId()));
@@ -48,7 +53,12 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getAllFilms() {
-        String sql = "SELECT * FROM films";
+        String sql = """
+        SELECT f.*, m.name AS mpa_name
+        FROM films AS f
+        LEFT JOIN mpa_ratings AS m ON f.mpa_id = m.id
+        ORDER BY f.id
+        """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Film film = new Film();
             film.setId(rs.getInt("id"));
@@ -59,7 +69,7 @@ public class FilmDbStorage implements FilmStorage {
             film.setDuration(rs.getInt("duration"));
             int mpaId = rs.getInt("mpa_id");
             if (!rs.wasNull()) {
-                film.setMpaRating(MpaRating.fromId(mpaId));
+                film.setMpaRating(new MpaRating(mpaId, rs.getString("mpa_name")));
             }
             film.setGenres(getGenresByFilmId(film.getId()));
             film.setLikes(getLikesByFilmId(film.getId()));
@@ -130,10 +140,16 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private Set<Genre> getGenresByFilmId(int filmId) {
-        String sql = "SELECT genre_id FROM film_genres WHERE film_id = ?";
+        String sql = """
+                SELECT g.id, g.name
+                FROM film_genres AS fg
+                JOIN genres AS g ON fg.genre_id = g.id
+                WHERE fg.film_id = ?
+                ORDER BY g.id
+                """;
 
         return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) ->
-                Genre.fromId(rs.getInt("genre_id")), filmId));
+                new Genre(rs.getInt("id"), rs.getString("name")), filmId));
     }
 
     private Set<Integer> getLikesByFilmId(int filmId) {

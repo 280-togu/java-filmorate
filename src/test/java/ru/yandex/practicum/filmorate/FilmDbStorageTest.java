@@ -1,3 +1,4 @@
+
 package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +32,48 @@ class FilmDbStorageTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 2");
+        // Подготавливаем справочники, используемые внешними ключами.
+        jdbcTemplate.update(
+                "MERGE INTO mpa_ratings (id, name) KEY(id) VALUES (?, ?)",
+                1, "G"
+        );
+        jdbcTemplate.update(
+                "MERGE INTO mpa_ratings (id, name) KEY(id) VALUES (?, ?)",
+                2, "PG"
+        );
+        jdbcTemplate.update(
+                "MERGE INTO mpa_ratings (id, name) KEY(id) VALUES (?, ?)",
+                3, "PG-13"
+        );
+        jdbcTemplate.update(
+                "MERGE INTO mpa_ratings (id, name) KEY(id) VALUES (?, ?)",
+                4, "R"
+        );
+
+        jdbcTemplate.update(
+                "MERGE INTO genres (id, name) KEY(id) VALUES (?, ?)",
+                1, "Комедия"
+        );
+        jdbcTemplate.update(
+                "MERGE INTO genres (id, name) KEY(id) VALUES (?, ?)",
+                2, "Драма"
+        );
+        jdbcTemplate.update(
+                "MERGE INTO genres (id, name) KEY(id) VALUES (?, ?)",
+                4, "Триллер"
+        );
+        jdbcTemplate.update(
+                "MERGE INTO genres (id, name) KEY(id) VALUES (?, ?)",
+                6, "Боевик"
+        );
+
         jdbcTemplate.update(
                 "INSERT INTO users (id, email, login, name, birthday) VALUES (?, ?, ?, ?, ?)",
                 1, "user1@example.com", "user1", "User One",
                 LocalDate.of(1990, 1, 10)
         );
+
+        jdbcTemplate.execute("ALTER TABLE films ALTER COLUMN id RESTART WITH 2");
 
         jdbcTemplate.update(
                 "INSERT INTO films (id, name, description, release_date, duration, mpa_id) " +
@@ -66,8 +103,8 @@ class FilmDbStorageTest {
         assertEquals("Test Description", film.getDescription());
         assertEquals(LocalDate.of(2020, 5, 10), film.getReleaseDate());
         assertEquals(100, film.getDuration());
-        assertEquals(MpaRating.G, film.getMpaRating());
-        assertEquals(Set.of(Genre.COMEDY), film.getGenres());
+        assertEquals(new MpaRating(1, "G"), film.getMpaRating());
+        assertEquals(Set.of(new Genre(1, "Комедия")), film.getGenres());
         assertEquals(Set.of(1), film.getLikes());
     }
 
@@ -86,8 +123,11 @@ class FilmDbStorageTest {
         film.setDescription("New Description");
         film.setReleaseDate(LocalDate.of(2022, 6, 15));
         film.setDuration(120);
-        film.setMpaRating(MpaRating.PG);
-        film.setGenres(Set.of(Genre.DRAMA, Genre.THRILLER));
+        film.setMpaRating(new MpaRating(2, "PG"));
+        film.setGenres(Set.of(
+                new Genre(2, "Драма"),
+                new Genre(4, "Триллер")
+        ));
         film.setLikes(Set.of(1));
 
         filmStorage.addFilm(film);
@@ -101,20 +141,29 @@ class FilmDbStorageTest {
         assertEquals("New Description", savedFilm.getDescription());
         assertEquals(LocalDate.of(2022, 6, 15), savedFilm.getReleaseDate());
         assertEquals(120, savedFilm.getDuration());
-        assertEquals(MpaRating.PG, savedFilm.getMpaRating());
-        assertEquals(Set.of(Genre.DRAMA, Genre.THRILLER), savedFilm.getGenres());
+        assertEquals(new MpaRating(2, "PG"), savedFilm.getMpaRating());
+        assertEquals(Set.of(
+                new Genre(2, "Драма"),
+                new Genre(4, "Триллер")
+        ), savedFilm.getGenres());
         assertEquals(Set.of(1), savedFilm.getLikes());
     }
 
     @Test
     void shouldUpdateFilm() {
         Film film = filmStorage.getFilmById(1);
+
+        assertNotNull(film);
+
         film.setName("Updated Film");
         film.setDescription("Updated Description");
         film.setReleaseDate(LocalDate.of(2021, 8, 20));
         film.setDuration(110);
-        film.setMpaRating(MpaRating.R);
-        film.setGenres(Set.of(Genre.ACTION, Genre.THRILLER));
+        film.setMpaRating(new MpaRating(4, "R"));
+        film.setGenres(Set.of(
+                new Genre(6, "Боевик"),
+                new Genre(4, "Триллер")
+        ));
         film.setLikes(Set.of());
 
         filmStorage.updateFilm(film);
@@ -126,8 +175,11 @@ class FilmDbStorageTest {
         assertEquals("Updated Description", updatedFilm.getDescription());
         assertEquals(LocalDate.of(2021, 8, 20), updatedFilm.getReleaseDate());
         assertEquals(110, updatedFilm.getDuration());
-        assertEquals(MpaRating.R, updatedFilm.getMpaRating());
-        assertEquals(Set.of(Genre.ACTION, Genre.THRILLER), updatedFilm.getGenres());
+        assertEquals(new MpaRating(4, "R"), updatedFilm.getMpaRating());
+        assertEquals(Set.of(
+                new Genre(6, "Боевик"),
+                new Genre(4, "Триллер")
+        ), updatedFilm.getGenres());
         assertTrue(updatedFilm.getLikes().isEmpty());
     }
 
