@@ -1,4 +1,3 @@
-
 package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -244,6 +243,29 @@ class UserControllerTest {
     }
 
     @Test
+    void confirmFriendship_shouldConfirmFriendship() {
+        User firstUser = createTestUser("first");
+        User secondUser = createTestUser("second");
+
+        controller.addFriend(firstUser.getId(), secondUser.getId());
+
+        // Второй пользователь подтверждает запрос первого.
+        controller.confirmFriendship(
+                secondUser.getId(),
+                firstUser.getId()
+        );
+
+        Collection<User> firstUserFriends = controller.getFriends(firstUser.getId());
+        Collection<User> secondUserFriends = controller.getFriends(secondUser.getId());
+
+        assertEquals(1, firstUserFriends.size());
+        assertEquals(secondUser.getId(), firstUserFriends.iterator().next().getId());
+
+        assertEquals(1, secondUserFriends.size());
+        assertEquals(firstUser.getId(), secondUserFriends.iterator().next().getId());
+    }
+
+    @Test
     void getFriends_shouldReturnConfirmedFriends() {
         User firstUser = createTestUser("first");
         User secondUser = createTestUser("second");
@@ -251,7 +273,7 @@ class UserControllerTest {
         controller.addFriend(firstUser.getId(), secondUser.getId());
 
         // Второй пользователь подтверждает запрос первого.
-        friendshipService.confirmFriendship(
+        controller.confirmFriendship(
                 secondUser.getId(),
                 firstUser.getId()
         );
@@ -272,7 +294,7 @@ class UserControllerTest {
         User secondUser = createTestUser("second");
 
         controller.addFriend(firstUser.getId(), secondUser.getId());
-        friendshipService.confirmFriendship(
+        controller.confirmFriendship(
                 secondUser.getId(),
                 firstUser.getId()
         );
@@ -298,11 +320,11 @@ class UserControllerTest {
         controller.addFriend(secondUser.getId(), commonFriend.getId());
 
         // Общий друг подтверждает оба запроса.
-        friendshipService.confirmFriendship(
+        controller.confirmFriendship(
                 commonFriend.getId(),
                 firstUser.getId()
         );
-        friendshipService.confirmFriendship(
+        controller.confirmFriendship(
                 commonFriend.getId(),
                 secondUser.getId()
         );
