@@ -116,4 +116,14 @@ public class UserService {
         }
         return user;
     }
+
+    public void deleteUser(int userId) {
+        User user = userStorage.getUserById(userId);
+        if (user == null) {
+            log.warn("Не удалось удалить пользователя: пользователь с ID {} не найден.", userId);
+            throw new NotFoundException("Пользователь не найден.");
+        }
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с ID {} успешно удалён.", userId);
+    }
 }

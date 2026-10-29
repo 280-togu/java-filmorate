@@ -164,4 +164,14 @@ public class FilmService {
         }
         return film;
     }
+
+    public void deleteFilm(int id) {
+        Film film = filmStorage.getFilmById(id);
+        if (film == null) {
+            log.warn("Не удалось удалить фильм: фильм с ID {} не найден.", id);
+            throw new NotFoundException("Фильм не найден.");
+        }
+        filmStorage.deleteFilm(id);
+        log.info("Фильм с ID {} успешно удалён.", id);
+    }
 }

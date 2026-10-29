@@ -71,4 +71,10 @@ public class UserController {
                                   @PathVariable("friendId") int friendId) {
         friendshipService.confirmFriendship(id, friendId);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable("id") int id) {
+        userService.deleteUser(id);
+    }
 }

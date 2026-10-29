@@ -38,6 +38,7 @@ public class FilmDbStorage implements FilmStorage {
                     film.setMpaRating(MpaRating.fromId(mpaId));
                 }
                 film.setGenres(getGenresByFilmId(film.getId()));
+                film.setLikes(getLikesByFilmId(film.getId()));
                 return film;
             }, id);
         } catch (EmptyResultDataAccessException e) {
@@ -61,6 +62,7 @@ public class FilmDbStorage implements FilmStorage {
                 film.setMpaRating(MpaRating.fromId(mpaId));
             }
             film.setGenres(getGenresByFilmId(film.getId()));
+            film.setLikes(getLikesByFilmId(film.getId()));
             return film;
         });
     }
@@ -90,6 +92,10 @@ public class FilmDbStorage implements FilmStorage {
         for (Genre genre : film.getGenres()) {
             jdbcTemplate.update(genreSql, film.getId(), genre.getId());
         }
+        String likesSql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+        for (Integer userId : film.getLikes()) {
+            jdbcTemplate.update(likesSql, film.getId(), userId);
+        }
     }
 
     @Override
@@ -102,12 +108,25 @@ public class FilmDbStorage implements FilmStorage {
                 film.getDuration(),
                 film.getMpaRating() != null ? film.getMpaRating().getId() : null,
                 film.getId());
+        String deleteGenresSql = "DELETE FROM film_genres WHERE film_id = ?";
+        jdbcTemplate.update(deleteGenresSql, film.getId());
+        String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+        for (Genre genre : film.getGenres()) {
+            jdbcTemplate.update(genreSql, film.getId(), genre.getId());
+        }
+        String deleteLikesSql = "DELETE FROM film_likes WHERE film_id = ?";
+        jdbcTemplate.update(deleteLikesSql, film.getId());
+        String likesSql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+        for (Integer userId : film.getLikes()) {
+            jdbcTemplate.update(likesSql, film.getId(), userId);
+        }
     }
 
     @Override
     public void deleteFilm(int id) {
-        String sql = "DELETE FROM films WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?", id);
+        jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ?", id);
+        jdbcTemplate.update("DELETE FROM films WHERE id = ?", id);
     }
 
     private Set<Genre> getGenresByFilmId(int filmId) {
@@ -115,5 +134,12 @@ public class FilmDbStorage implements FilmStorage {
 
         return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) ->
                 Genre.fromId(rs.getInt("genre_id")), filmId));
+    }
+
+    private Set<Integer> getLikesByFilmId(int filmId) {
+        String sql = "SELECT user_id FROM film_likes WHERE film_id = ?";
+
+        return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) ->
+                rs.getInt("user_id"), filmId));
     }
 }

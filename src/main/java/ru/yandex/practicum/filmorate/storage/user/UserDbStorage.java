@@ -77,12 +77,18 @@ public class UserDbStorage implements UserStorage {
     @Override
     public void updateUser(User user) {
         String query = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
-        jdbcTemplate.update(query, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), user.getId());
+        jdbcTemplate.update(query,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday() != null ? Date.valueOf(user.getBirthday()) : null,
+                user.getId());
     }
 
     @Override
     public void deleteUser(int id) {
-        String sql = "DELETE FROM users WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update("DELETE FROM film_likes WHERE user_id = ?", id);
+        jdbcTemplate.update("DELETE FROM friendships WHERE user_id = ? OR friend_id = ?", id, id);
+        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
     }
 }
