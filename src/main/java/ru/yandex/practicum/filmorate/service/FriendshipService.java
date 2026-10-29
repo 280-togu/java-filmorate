@@ -24,7 +24,7 @@ public class FriendshipService {
     private final UserStorage userStorage;
 
     public FriendshipService(
-            FriendshipStorage friendshipStorage,
+            @Qualifier("friendshipDbStorage") FriendshipStorage friendshipStorage,
             @Qualifier("userDbStorage") UserStorage userStorage
     ) {
         this.friendshipStorage = friendshipStorage;
