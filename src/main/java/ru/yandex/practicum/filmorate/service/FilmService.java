@@ -132,6 +132,10 @@ public class FilmService {
             oldFilm.setMpaRating(newFilm.getMpaRating());
         }
 
+        if (newFilm.getLikes() != null) {
+            oldFilm.setLikes(newFilm.getLikes());
+        }
+
         if (newFilm.getGenres() != null) {
             oldFilm.setGenres(newFilm.getGenres());
         }
@@ -154,10 +158,9 @@ public class FilmService {
             log.warn("Не удалось поставить лайк: фильм с ID {} не найден.", filmId);
             throw new NotFoundException("Фильм не найден.");
         }
-        film.getLikes().add(userId);
-        filmStorage.updateFilm(film);
+        filmStorage.addLike(filmId, userId);
         log.info("Пользователь с ID {} поставил лайк фильму с ID {}", userId, filmId);
-        return film;
+        return filmStorage.getFilmById(filmId);
     }
 
     public Film removeLike(Integer filmId, Integer userId) {
@@ -171,10 +174,9 @@ public class FilmService {
             log.warn("Не удалось убрать лайк: фильм с ID {} не найден.", filmId);
             throw new NotFoundException("Фильм не найден.");
         }
-        film.getLikes().remove(userId);
-        filmStorage.updateFilm(film);
+        filmStorage.removeLike(filmId, userId);
         log.info("Пользователь с ID {} убрал лайк фильму с ID {}", userId, filmId);
-        return film;
+        return filmStorage.getFilmById(filmId);
     }
 
     public Collection<Film> getTopFilms(int count) {

@@ -93,10 +93,15 @@ class FriendshipDbStorageTest {
 
         List<Friendship> result = friendshipStorage.getFriendshipsByUserId(1);
 
-        assertEquals(1, result.size());
-        assertEquals(1, result.get(0).getUserId());
-        assertEquals(2, result.get(0).getFriendId());
-        assertTrue(result.get(0).isConfirmed());
+        assertEquals(2, result.size());
+
+        assertTrue(result.stream().anyMatch(friendship ->
+                friendship.getUserId() == 1 && friendship.getFriendId() == 2
+        ));
+
+        assertTrue(result.stream().anyMatch(friendship ->
+                friendship.getUserId() == 3 && friendship.getFriendId() == 1
+        ));
     }
 
     @Test

@@ -398,34 +398,20 @@ class FilmControllerTest {
 
     @Test
     void addLike_existingFilmAndUser_shouldAddLike() {
-        Film film = new Film();
-        film.setName("Фильм");
-        film.setDescription("Описание");
-        film.setReleaseDate(LocalDate.of(2020, 1, 1));
-        film.setDuration(120);
-
+        Film film = createFilm("Фильм");
         Film createdFilm = controller.addFilm(film);
 
-        User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("test");
-        user.setName("Test");
-        user.setBirthday(LocalDate.of(1995, 5, 10));
-        userStorage.addUser(user);
+        User user = createUser("test");
 
         Film result = controller.addLike(createdFilm.getId(), user.getId());
 
+        assertNotNull(result.getLikes());
         assertTrue(result.getLikes().contains(user.getId()));
     }
 
     @Test
     void addLike_nonExistingUser_shouldThrowNotFoundException() {
-        Film film = new Film();
-        film.setName("Фильм");
-        film.setDescription("Описание");
-        film.setReleaseDate(LocalDate.of(2020, 1, 1));
-        film.setDuration(120);
-
+        Film film = createFilm("Фильм");
         Film createdFilm = controller.addFilm(film);
 
         assertThrows(
@@ -444,58 +430,37 @@ class FilmControllerTest {
 
     @Test
     void removeLike_existingFilmAndUser_shouldRemoveLike() {
-        Film film = new Film();
-        film.setName("Фильм");
-        film.setDescription("Описание");
-        film.setReleaseDate(LocalDate.of(2020, 1, 1));
-        film.setDuration(120);
-
+        Film film = createFilm("Фильм");
         Film createdFilm = controller.addFilm(film);
 
-        User user = new User();
-        user.setEmail("test@mail.ru");
-        user.setLogin("test");
-        user.setName("Test");
-        user.setBirthday(LocalDate.of(1995, 5, 10));
-        userStorage.addUser(user);
+        User user = createUser("test");
 
         controller.addLike(createdFilm.getId(), user.getId());
 
         Film result = controller.deleteLike(createdFilm.getId(), user.getId());
 
+        assertNotNull(result.getLikes());
         assertFalse(result.getLikes().contains(user.getId()));
     }
 
     @Test
     void getTopFilms_shouldReturnFilmsSortedByLikes() {
-        Film firstFilm = new Film();
-        firstFilm.setName("Первый");
-        firstFilm.setDescription("Описание");
-        firstFilm.setReleaseDate(LocalDate.of(2020, 1, 1));
-        firstFilm.setDuration(100);
+        Film firstFilm = controller.addFilm(createFilm("Первый"));
+        Film secondFilm = controller.addFilm(createFilm("Второй"));
+        Film thirdFilm = controller.addFilm(createFilm("Третий"));
 
-        Film secondFilm = new Film();
-        secondFilm.setName("Второй");
-        secondFilm.setDescription("Описание");
-        secondFilm.setReleaseDate(LocalDate.of(2020, 1, 1));
-        secondFilm.setDuration(100);
+        User firstUser = createUser("first");
+        User secondUser = createUser("second");
+        User thirdUser = createUser("third");
 
-        Film thirdFilm = new Film();
-        thirdFilm.setName("Третий");
-        thirdFilm.setDescription("Описание");
-        thirdFilm.setReleaseDate(LocalDate.of(2020, 1, 1));
-        thirdFilm.setDuration(100);
+        controller.addLike(firstFilm.getId(), firstUser.getId());
 
-        controller.addFilm(firstFilm);
-        controller.addFilm(secondFilm);
-        controller.addFilm(thirdFilm);
+        controller.addLike(secondFilm.getId(), firstUser.getId());
+        controller.addLike(secondFilm.getId(), secondUser.getId());
 
-        firstFilm.getLikes().add(1);
-        secondFilm.getLikes().add(1);
-        secondFilm.getLikes().add(2);
-        thirdFilm.getLikes().add(1);
-        thirdFilm.getLikes().add(2);
-        thirdFilm.getLikes().add(3);
+        controller.addLike(thirdFilm.getId(), firstUser.getId());
+        controller.addLike(thirdFilm.getId(), secondUser.getId());
+        controller.addLike(thirdFilm.getId(), thirdUser.getId());
 
         Collection<Film> result = controller.findTop10(2);
 
@@ -527,5 +492,24 @@ class FilmControllerTest {
 
         assertEquals("Старое название", result.getName());
         assertEquals("Старое описание", result.getDescription());
+    }
+
+    private Film createFilm(String name) {
+        Film film = new Film();
+        film.setName(name);
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(100);
+        return film;
+    }
+
+    private User createUser(String login) {
+        User user = new User();
+        user.setEmail(login + "@mail.ru");
+        user.setLogin(login);
+        user.setName(login);
+        user.setBirthday(LocalDate.of(1995, 5, 10));
+        userStorage.addUser(user);
+        return user;
     }
 }

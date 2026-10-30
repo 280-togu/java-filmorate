@@ -215,7 +215,7 @@ class UserControllerTest {
         );
 
         assertEquals(1, friendshipService.getFriends(firstUser.getId()).size());
-        assertEquals(1, friendshipService.getFriends(secondUser.getId()).size());
+        assertEquals(0, friendshipService.getFriends(secondUser.getId()).size());
     }
 
     @Test

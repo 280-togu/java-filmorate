@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.service.MpaService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/mpa")
 @RequiredArgsConstructor
@@ -17,7 +19,7 @@ public class MpaController {
     private final MpaService mpaService;
 
     @GetMapping
-    public Object getAllMpaRatings() {
+    public List<MpaRating> getAllMpaRatings() {
         return mpaService.getAllMpaRatings();
     }
 

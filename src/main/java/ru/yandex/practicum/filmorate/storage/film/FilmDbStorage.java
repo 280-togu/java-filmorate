@@ -10,8 +10,10 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.Genre;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -98,13 +100,17 @@ public class FilmDbStorage implements FilmStorage {
         if (key != null) {
             film.setId(key.intValue());
         }
-        String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-        for (Genre genre : film.getGenres()) {
-            jdbcTemplate.update(genreSql, film.getId(), genre.getId());
+        if (film.getGenres() != null) {
+            String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+            for (Genre genre : film.getGenres()) {
+                jdbcTemplate.update(genreSql, film.getId(), genre.getId());
+            }
         }
-        String likesSql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
-        for (Integer userId : film.getLikes()) {
-            jdbcTemplate.update(likesSql, film.getId(), userId);
+        if (film.getLikes() != null) {
+            String likesSql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+            for (Integer userId : film.getLikes()) {
+                jdbcTemplate.update(likesSql, film.getId(), userId);
+            }
         }
     }
 
@@ -118,17 +124,21 @@ public class FilmDbStorage implements FilmStorage {
                 film.getDuration(),
                 film.getMpaRating() != null ? film.getMpaRating().getId() : null,
                 film.getId());
-        String deleteGenresSql = "DELETE FROM film_genres WHERE film_id = ?";
-        jdbcTemplate.update(deleteGenresSql, film.getId());
-        String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
-        for (Genre genre : film.getGenres()) {
-            jdbcTemplate.update(genreSql, film.getId(), genre.getId());
+        if (film.getGenres() != null) {
+            String deleteGenresSql = "DELETE FROM film_genres WHERE film_id = ?";
+            jdbcTemplate.update(deleteGenresSql, film.getId());
+            String genreSql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
+            for (Genre genre : film.getGenres()) {
+                jdbcTemplate.update(genreSql, film.getId(), genre.getId());
+            }
         }
-        String deleteLikesSql = "DELETE FROM film_likes WHERE film_id = ?";
-        jdbcTemplate.update(deleteLikesSql, film.getId());
-        String likesSql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
-        for (Integer userId : film.getLikes()) {
-            jdbcTemplate.update(likesSql, film.getId(), userId);
+        if (film.getLikes() != null) {
+            String deleteLikesSql = "DELETE FROM film_likes WHERE film_id = ?";
+            jdbcTemplate.update(deleteLikesSql, film.getId());
+            String likesSql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+            for (Integer userId : film.getLikes()) {
+                jdbcTemplate.update(likesSql, film.getId(), userId);
+            }
         }
     }
 
@@ -137,6 +147,20 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update("DELETE FROM film_genres WHERE film_id = ?", id);
         jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ?", id);
         jdbcTemplate.update("DELETE FROM films WHERE id = ?", id);
+    }
+
+    @Override
+    public void addLike(int filmId, int userId) {
+        try {
+            jdbcTemplate.update("INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
+        } catch (DuplicateKeyException e) {
+            // Лайк уже существует, можно проигнорировать или обработать по-другому
+        }
+    }
+
+    @Override
+    public void removeLike(int filmId, int userId) {
+        jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?", filmId, userId);
     }
 
     private Set<Genre> getGenresByFilmId(int filmId) {
@@ -148,7 +172,7 @@ public class FilmDbStorage implements FilmStorage {
                 ORDER BY g.id
                 """;
 
-        return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) ->
+        return new LinkedHashSet<>(jdbcTemplate.query(sql, (rs, rowNum) ->
                 new Genre(rs.getInt("id"), rs.getString("name")), filmId));
     }
 

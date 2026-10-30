@@ -77,6 +77,7 @@ public class FriendshipService {
         List<Friendship> friendships = friendshipStorage.getFriendshipsByUserId(userId);
 
         return friendships.stream()
+                .filter(friendship -> friendship.getUserId() == userId || friendship.isConfirmed())
                 .map(friendship -> {
                     int friendId = friendship.getUserId() == userId
                             ? friendship.getFriendId()
