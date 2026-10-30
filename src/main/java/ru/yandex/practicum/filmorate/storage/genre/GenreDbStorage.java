@@ -22,6 +22,11 @@ public class GenreDbStorage implements GenreStorage {
     @Override
     public Genre getGenreById(int id) {
         String sql = "SELECT * FROM genres WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Genre(rs.getInt("id"), rs.getString("name")), id);
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new Genre(
+                        rs.getInt("id"),
+                        rs.getString("name")), id).stream().findFirst().orElse(null);
     }
 }

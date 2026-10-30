@@ -7,9 +7,12 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -19,13 +22,19 @@ import java.util.Comparator;
 @Service
 public class FilmService {
     private static final Logger log = LoggerFactory.getLogger(FilmService.class);
+    private final GenreStorage genreStorage;
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final MpaStorage mpaStorage;
 
-
-    public FilmService(@Qualifier("filmDbStorage") final FilmStorage filmStorage, @Qualifier("userDbStorage") final UserStorage userStorage) {
+    public FilmService(@Qualifier("filmDbStorage") final FilmStorage filmStorage,
+                       @Qualifier("userDbStorage") final UserStorage userStorage,
+                       @Qualifier("mpaDbStorage") final MpaStorage mpaStorage,
+                       @Qualifier("genreDbStorage") final GenreStorage genreStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
+        this.mpaStorage = mpaStorage;
+        this.genreStorage = genreStorage;
     }
 
     public Collection<Film> findAll() {
@@ -33,6 +42,11 @@ public class FilmService {
     }
 
     public Film create(Film film) {
+        if (film.getMpaRating() != null
+                && mpaStorage.getMpaRatingById(film.getMpaRating().getId()) == null) {
+            log.warn("Не удалось добавить фильм: рейтинг MPA не найден.");
+            throw new NotFoundException("Рейтинг MPA не найден.");
+        }
         if (film.getName() == null || film.getName().isBlank()) {
             log.warn("Не удалось добавить фильм: название не может быть пустым.");
             throw new ValidationException("Название не может быть пустым.");
@@ -50,6 +64,7 @@ public class FilmService {
             log.warn("Не удалось добавить фильм: продолжительность должна быть положительной.");
             throw new ValidationException("Продолжительность должна быть положительной.");
         }
+        validateGenres(film);
         filmStorage.addFilm(film);
         log.info("Фильм {} с названием '{}' добавлен", film.getId(), film.getName());
         return film;
@@ -89,6 +104,14 @@ public class FilmService {
             log.warn("Не удалось обновить фильм: продолжительность должна быть положительной.");
             throw new ValidationException("Продолжительность должна быть положительной.");
         }
+        if (newFilm.getMpaRating() != null
+                && mpaStorage.getMpaRatingById(newFilm.getMpaRating().getId()) == null) {
+            log.warn("Не удалось обновить фильм: рейтинг MPA не найден.");
+            throw new NotFoundException("Рейтинг MPA не найден.");
+        }
+
+        validateGenres(newFilm);
+
         if (newFilm.getName() != null) {
             oldFilm.setName(newFilm.getName());
         }
@@ -105,8 +128,17 @@ public class FilmService {
             oldFilm.setDuration(newFilm.getDuration());
         }
 
-        log.info("Фильм под ID {} - успешно обновлён", oldFilm.getId());
+        if (newFilm.getMpaRating() != null) {
+            oldFilm.setMpaRating(newFilm.getMpaRating());
+        }
+
+        if (newFilm.getGenres() != null) {
+            oldFilm.setGenres(newFilm.getGenres());
+        }
+
         filmStorage.updateFilm(oldFilm);
+        log.info("Фильм под ID {} - успешно обновлён", oldFilm.getId());
+
         return oldFilm;
     }
 
@@ -173,5 +205,18 @@ public class FilmService {
         }
         filmStorage.deleteFilm(id);
         log.info("Фильм с ID {} успешно удалён.", id);
+    }
+
+    private void validateGenres(Film film) {
+        if (film.getGenres() == null) {
+            return;
+        }
+
+        for (Genre genre : film.getGenres()) {
+            if (genreStorage.getGenreById(genre.getId()) == null) {
+                log.warn("Не удалось найти жанр с id={}", genre.getId());
+                throw new NotFoundException("Жанр не найден.");
+            }
+        }
     }
 }

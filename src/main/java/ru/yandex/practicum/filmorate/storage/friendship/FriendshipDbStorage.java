@@ -33,13 +33,13 @@ public class FriendshipDbStorage implements FriendshipStorage {
 
     @Override
     public List<Friendship> getFriendshipsByUserId(int userId) {
-        String sql = "SELECT * FROM friendships WHERE user_id = ? OR friend_id = ?";
+        String sql = "SELECT * FROM friendships WHERE user_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
                 new Friendship(
                         rs.getInt("user_id"),
                         rs.getInt("friend_id"),
                         rs.getBoolean("confirmed")
-                ), userId, userId);
+                ), userId);
     }
 
     @Override

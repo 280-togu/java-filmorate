@@ -182,10 +182,7 @@ class UserControllerTest {
 
     @Test
     void findUserById_nonExistingUser_shouldThrowNotFoundException() {
-        assertThrows(
-                NotFoundException.class,
-                () -> controller.findUserById(999)
-        );
+        assertThrows(NotFoundException.class, () -> controller.findUserById(999));
     }
 
     @Test
@@ -217,9 +214,8 @@ class UserControllerTest {
                 () -> controller.addFriend(firstUser.getId(), secondUser.getId())
         );
 
-        // Запрос создан, но дружба ещё не подтверждена.
-        assertTrue(friendshipService.getFriends(firstUser.getId()).isEmpty());
-        assertTrue(friendshipService.getFriends(secondUser.getId()).isEmpty());
+        assertEquals(1, friendshipService.getFriends(firstUser.getId()).size());
+        assertEquals(1, friendshipService.getFriends(secondUser.getId()).size());
     }
 
     @Test
@@ -249,11 +245,7 @@ class UserControllerTest {
 
         controller.addFriend(firstUser.getId(), secondUser.getId());
 
-        // Второй пользователь подтверждает запрос первого.
-        controller.confirmFriendship(
-                secondUser.getId(),
-                firstUser.getId()
-        );
+        controller.confirmFriendship(secondUser.getId(), firstUser.getId());
 
         Collection<User> firstUserFriends = controller.getFriends(firstUser.getId());
         Collection<User> secondUserFriends = controller.getFriends(secondUser.getId());
@@ -271,18 +263,13 @@ class UserControllerTest {
         User secondUser = createTestUser("second");
 
         controller.addFriend(firstUser.getId(), secondUser.getId());
+        controller.confirmFriendship(secondUser.getId(), firstUser.getId());
 
-        // Второй пользователь подтверждает запрос первого.
-        controller.confirmFriendship(
-                secondUser.getId(),
-                firstUser.getId()
-        );
-
-        Collection<User> result = controller.getFriends(firstUser.getId());
+        Collection<User> firstUserFriends = controller.getFriends(firstUser.getId());
         Collection<User> secondUserFriends = controller.getFriends(secondUser.getId());
 
-        assertEquals(1, result.size());
-        assertEquals(secondUser.getId(), result.iterator().next().getId());
+        assertEquals(1, firstUserFriends.size());
+        assertEquals(secondUser.getId(), firstUserFriends.iterator().next().getId());
 
         assertEquals(1, secondUserFriends.size());
         assertEquals(firstUser.getId(), secondUserFriends.iterator().next().getId());
@@ -294,10 +281,7 @@ class UserControllerTest {
         User secondUser = createTestUser("second");
 
         controller.addFriend(firstUser.getId(), secondUser.getId());
-        controller.confirmFriendship(
-                secondUser.getId(),
-                firstUser.getId()
-        );
+        controller.confirmFriendship(secondUser.getId(), firstUser.getId());
 
         assertEquals(1, controller.getFriends(firstUser.getId()).size());
         assertEquals(1, controller.getFriends(secondUser.getId()).size());
@@ -319,15 +303,8 @@ class UserControllerTest {
         controller.addFriend(firstUser.getId(), commonFriend.getId());
         controller.addFriend(secondUser.getId(), commonFriend.getId());
 
-        // Общий друг подтверждает оба запроса.
-        controller.confirmFriendship(
-                commonFriend.getId(),
-                firstUser.getId()
-        );
-        controller.confirmFriendship(
-                commonFriend.getId(),
-                secondUser.getId()
-        );
+        controller.confirmFriendship(commonFriend.getId(), firstUser.getId());
+        controller.confirmFriendship(commonFriend.getId(), secondUser.getId());
 
         Collection<User> result =
                 controller.getCommonFriends(firstUser.getId(), secondUser.getId());
@@ -337,7 +314,7 @@ class UserControllerTest {
     }
 
     @Test
-    void getFriends_unconfirmedFriendship_shouldReturnEmptyCollection() {
+    void getFriends_unconfirmedFriendship_shouldReturnFriend() {
         User firstUser = createTestUser("first");
         User secondUser = createTestUser("second");
 
@@ -345,6 +322,7 @@ class UserControllerTest {
 
         Collection<User> result = controller.getFriends(firstUser.getId());
 
-        assertTrue(result.isEmpty());
+        assertEquals(1, result.size());
+        assertEquals(secondUser.getId(), result.iterator().next().getId());
     }
 }

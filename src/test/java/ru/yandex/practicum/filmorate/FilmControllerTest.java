@@ -6,13 +6,18 @@ import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,13 +25,64 @@ class FilmControllerTest {
 
     private FilmController controller;
     private InMemoryUserStorage userStorage;
+    private MpaStorage mpaStorage;
+    private GenreStorage genreStorage;
 
     @BeforeEach
     void setUp() {
         InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
         userStorage = new InMemoryUserStorage();
 
-        FilmService filmService = new FilmService(filmStorage, userStorage);
+        mpaStorage = new MpaStorage() {
+            @Override
+            public List<MpaRating> getAllMpaRatings() {
+                return List.of(
+                        new MpaRating(1, "G"),
+                        new MpaRating(2, "PG"),
+                        new MpaRating(3, "PG-13"),
+                        new MpaRating(4, "R"),
+                        new MpaRating(5, "NC-17")
+                );
+            }
+
+            @Override
+            public MpaRating getMpaRatingById(int id) {
+                return getAllMpaRatings().stream()
+                        .filter(rating -> rating.getId() == id)
+                        .findFirst()
+                        .orElse(null);
+            }
+        };
+
+        genreStorage = new GenreStorage() {
+            @Override
+            public List<Genre> getAllGenres() {
+                return List.of(
+                        new Genre(1, "Комедия"),
+                        new Genre(2, "Драма"),
+                        new Genre(3, "Мультфильм"),
+                        new Genre(4, "Триллер"),
+                        new Genre(5, "Документальный"),
+                        new Genre(6, "Боевик")
+                );
+            }
+
+            @Override
+            public Genre getGenreById(int id) {
+                return getAllGenres().stream()
+                        .filter(genre -> genre.getId() == id)
+                        .findFirst()
+                        .orElse(null);
+            }
+        };
+
+        FilmService filmService = new FilmService(
+                filmStorage,
+                userStorage,
+                mpaStorage,
+                genreStorage
+        );
+
         controller = new FilmController(filmService);
     }
 
@@ -144,6 +200,36 @@ class FilmControllerTest {
         Film film = new Film();
 
         assertThrows(ValidationException.class, () -> controller.addFilm(film));
+    }
+
+    @Test
+    void addFilm_existingMpa_shouldCreateFilm() {
+        Film film = new Film();
+        film.setName("Фильм");
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(120);
+        film.setMpaRating(new MpaRating(1, "G"));
+
+        Film result = controller.addFilm(film);
+
+        assertNotNull(result);
+        assertEquals(1, result.getMpaRating().getId());
+    }
+
+    @Test
+    void addFilm_nonExistingMpa_shouldThrowNotFoundException() {
+        Film film = new Film();
+        film.setName("Фильм");
+        film.setDescription("Описание");
+        film.setReleaseDate(LocalDate.of(2020, 1, 1));
+        film.setDuration(120);
+        film.setMpaRating(new MpaRating(10, "Unknown"));
+
+        assertThrows(
+                NotFoundException.class,
+                () -> controller.addFilm(film)
+        );
     }
 
     @Test
@@ -414,7 +500,6 @@ class FilmControllerTest {
         Collection<Film> result = controller.findTop10(2);
 
         assertEquals(2, result.size());
-
         assertEquals("Третий", result.iterator().next().getName());
     }
 

@@ -24,11 +24,11 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film getFilmById(int id) {
         String sql = """
-        SELECT f.*, m.name AS mpa_name
-        FROM films AS f
-        LEFT JOIN mpa_ratings AS m ON f.mpa_id = m.id
-        WHERE f.id = ?
-        """;
+                SELECT f.*, m.name AS mpa_name
+                FROM films AS f
+                LEFT JOIN mpa_ratings AS m ON f.mpa_id = m.id
+                WHERE f.id = ?
+                """;
         try {
             return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
                 Film film = new Film();
@@ -54,11 +54,11 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getAllFilms() {
         String sql = """
-        SELECT f.*, m.name AS mpa_name
-        FROM films AS f
-        LEFT JOIN mpa_ratings AS m ON f.mpa_id = m.id
-        ORDER BY f.id
-        """;
+                SELECT f.*, m.name AS mpa_name
+                FROM films AS f
+                LEFT JOIN mpa_ratings AS m ON f.mpa_id = m.id
+                ORDER BY f.id
+                """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Film film = new Film();
             film.setId(rs.getInt("id"));

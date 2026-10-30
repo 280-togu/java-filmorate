@@ -66,7 +66,6 @@ public class FriendshipService {
             throw new NotFoundException("Один из пользователей не найден.");
         }
         friendshipStorage.deleteFriendship(userId, friendId);
-        friendshipStorage.deleteFriendship(friendId, userId);
         logger.info("Пользователь {} удалил пользователя {} из друзей.", userId, friendId);
     }
 
@@ -75,11 +74,15 @@ public class FriendshipService {
             logger.warn("Не удалось получить список друзей: пользователь не найден.");
             throw new NotFoundException("Пользователь не найден.");
         }
+
         List<Friendship> friendships = friendshipStorage.getFriendshipsByUserId(userId);
+
         return friendships.stream()
-                .filter(Friendship::isConfirmed)
                 .map(friendship -> {
-                    int friendId = friendship.getUserId() == userId ? friendship.getFriendId() : friendship.getUserId();
+                    int friendId = friendship.getUserId() == userId
+                            ? friendship.getFriendId()
+                            : friendship.getUserId();
+
                     return userStorage.getUserById(friendId);
                 })
                 .toList();

@@ -26,7 +26,10 @@ public class MpaDbStorage implements MpaStorage {
     public MpaRating getMpaRatingById(int id) {
         String sql = "SELECT id, name FROM mpa_ratings WHERE id = ?";
 
-        return jdbcTemplate.queryForObject(
-                sql, (rs, rowNum) -> new MpaRating(rs.getInt("id"), rs.getString("name")), id);
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new MpaRating(rs.getInt("id"), rs.getString("name")),
+                id
+        ).stream().findFirst().orElse(null);
     }
 }
