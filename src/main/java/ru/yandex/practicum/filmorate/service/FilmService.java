@@ -16,7 +16,6 @@ import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Comparator;
 
 
 @Service
@@ -184,10 +183,7 @@ public class FilmService {
             throw new ValidationException("Количество фильмов должно быть больше нуля.");
         }
         log.info("Запрошены топ {} фильмов", count);
-        return filmStorage.getAllFilms().stream()
-                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                .limit(count)
-                .toList();
+        return filmStorage.getTopFilms(count);
     }
 
     public Film getFilmById(Integer id) {
